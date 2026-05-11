@@ -1,20 +1,34 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LoaderCircle, Upload, X } from "lucide-react";
+import { LoaderCircle, Plus, Upload, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { removeImageBackground } from "@/lib/imageProcessor";
+import { CLOTHING_CATEGORIES, SEASONS } from "@/lib/types";
+import type { ClothingItem } from "@/lib/types";
 
 type Status =
   | { kind: "idle" }
   | { kind: "processing"; progress: number; originalUrl: string }
-  | { kind: "done"; originalUrl: string; resultUrl: string }
+  | { kind: "done"; originalUrl: string; resultUrl: string; resultBlob: Blob }
   | { kind: "error"; message: string };
 
-export function ClothingUploader() {
+type ClothingUploaderProps = {
+  onAdd: (item: Omit<ClothingItem, "id">) => void;
+  onSuccess?: () => void;
+};
+
+export function ClothingUploader({ onAdd, onSuccess }: ClothingUploaderProps) {
   const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [category, setCategory] = useState<string>("");
+  const [color, setColor] = useState("");
+  const [season, setSeason] = useState<string>("");
+  const [material, setMaterial] = useState("棉质");
+  const [brand, setBrand] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const objectUrlsRef = useRef<Set<string>>(new Set());
 
@@ -57,7 +71,7 @@ export function ClothingUploader() {
         },
       });
       const resultUrl = trackObjectURL(result);
-      setStatus({ kind: "done", originalUrl, resultUrl });
+      setStatus({ kind: "done", originalUrl, resultUrl, resultBlob: result });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "处理失败，请重试。";
@@ -69,7 +83,38 @@ export function ClothingUploader() {
     revokeAllObjectURLs();
     if (fileInputRef.current) fileInputRef.current.value = "";
     setStatus({ kind: "idle" });
+    setCategory("");
+    setColor("");
+    setSeason("");
+    setMaterial("棉质");
+    setBrand("");
   }
+
+  async function handleAdd() {
+    if (status.kind !== "done") return;
+    if (!category || !color || !season) return;
+
+    try {
+      const base64 = await blobToBase64(status.resultBlob);
+      onAdd({
+        imageUrl: base64,
+        category: category as ClothingItem["category"],
+        color,
+        season: season as ClothingItem["season"],
+        material: material || "未知",
+        brand: brand || "未知",
+        purchaseDate: new Date().toISOString().slice(0, 10),
+        careInstructions: "常规清洗",
+      });
+      reset();
+      onSuccess?.();
+    } catch {
+      setStatus({ kind: "error", message: "图片转换失败，请重试。" });
+    }
+  }
+
+  const canAdd =
+    status.kind === "done" && category && color && season;
 
   return (
     <div className="flex flex-col gap-4">
@@ -120,10 +165,83 @@ export function ClothingUploader() {
               />
             </PreviewBlock>
           </div>
-          <Button variant="outline" onClick={reset} className="self-start">
-            <X className="h-4 w-4" />
-            重新选择
-          </Button>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="category">分类 *</Label>
+              <select
+                id="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="flex h-9 w-full items-center rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+              >
+                <option value="">选择分类</option>
+                {CLOTHING_CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="color">颜色 *</Label>
+              <Input
+                id="color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                placeholder="如：白色、藏蓝"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="season">季节 *</Label>
+              <select
+                id="season"
+                value={season}
+                onChange={(e) => setSeason(e.target.value)}
+                className="flex h-9 w-full items-center rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm"
+              >
+                <option value="">选择季节</option>
+                {SEASONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="material">材质</Label>
+              <Input
+                id="material"
+                value={material}
+                onChange={(e) => setMaterial(e.target.value)}
+                placeholder="如：棉、羊毛"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5 sm:col-span-2">
+              <Label htmlFor="brand">品牌</Label>
+              <Input
+                id="brand"
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                placeholder="如：UNIQLO"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={handleAdd}
+              disabled={!canAdd}
+              className="flex-1"
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              添加到衣橱
+            </Button>
+            <Button variant="outline" onClick={reset}>
+              <X className="h-4 w-4" />
+              重新选择
+            </Button>
+          </div>
         </div>
       )}
 
@@ -198,4 +316,13 @@ function PreviewImage({
       />
     </div>
   );
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 }

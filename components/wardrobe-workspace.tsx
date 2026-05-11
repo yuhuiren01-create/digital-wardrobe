@@ -66,8 +66,6 @@ export function WardrobeWorkspace({ items }: WardrobeWorkspaceProps) {
 
       <FashionRecommendations trends={FASHION_TRENDS_2026_SS} />
 
-      <InspirationBoard />
-
       <div className="grid gap-6 md:grid-cols-[200px_1fr]">
         <WardrobeSidebar
           seasonFilter={seasonFilter}
@@ -85,6 +83,8 @@ export function WardrobeWorkspace({ items }: WardrobeWorkspaceProps) {
           <WardrobeGrid items={filtered} onItemClick={setOpenedItem} />
         </div>
       </div>
+
+      <InspirationBoard />
 
       <ClothingDetailDialog
         item={openedItem}
