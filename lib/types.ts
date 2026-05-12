@@ -4,6 +4,7 @@ export type ClothingCategory =
   | "连衣裙"
   | "套装"
   | "鞋"
+  | "包包"
   | "饰品";
 
 export type Season = "春" | "夏" | "秋" | "冬" | "四季";
@@ -26,6 +27,7 @@ export const CLOTHING_CATEGORIES = [
   "连衣裙",
   "套装",
   "鞋",
+  "包包",
   "饰品",
 ] as const satisfies readonly ClothingCategory[];
 
