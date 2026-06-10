@@ -19,9 +19,10 @@ import type { ClothingItem } from "@/lib/types";
 
 type WardrobeWorkspaceProps = {
   items: ClothingItem[];
+  onDeleteItem?: (item: ClothingItem) => void;
 };
 
-export function WardrobeWorkspace({ items }: WardrobeWorkspaceProps) {
+export function WardrobeWorkspace({ items, onDeleteItem }: WardrobeWorkspaceProps) {
   const [seasonFilter, setSeasonFilter] = useState<SeasonFilter>(ALL);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>(ALL);
   const [openedItem, setOpenedItem] = useState<ClothingItem | null>(null);
@@ -90,6 +91,7 @@ export function WardrobeWorkspace({ items }: WardrobeWorkspaceProps) {
         item={openedItem}
         onOpenChange={handleDialogChange}
         onPlaceInOutfit={placeInOutfit}
+        onDelete={onDeleteItem}
       />
     </div>
   );

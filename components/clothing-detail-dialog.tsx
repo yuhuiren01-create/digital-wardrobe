@@ -2,6 +2,7 @@
 
 import { Fragment } from "react";
 import Image from "next/image";
+import { Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,12 +19,14 @@ type ClothingDetailDialogProps = {
   item: ClothingItem | null;
   onOpenChange: (open: boolean) => void;
   onPlaceInOutfit?: (item: ClothingItem, slot: 0 | 1) => void;
+  onDelete?: (item: ClothingItem) => void;
 };
 
 export function ClothingDetailDialog({
   item,
   onOpenChange,
   onPlaceInOutfit,
+  onDelete,
 }: ClothingDetailDialogProps) {
   return (
     <Dialog open={Boolean(item)} onOpenChange={onOpenChange}>
@@ -58,22 +61,34 @@ export function ClothingDetailDialog({
               </dl>
             </div>
 
-            {onPlaceInOutfit ? (
-              <DialogFooter className="gap-2 sm:gap-2">
+            <DialogFooter className="gap-2 sm:gap-2">
+              {onDelete && (
                 <Button
-                  variant="outline"
-                  onClick={() => onPlaceInOutfit(item, 0)}
+                  variant="destructive"
+                  onClick={() => onDelete(item)}
+                  className="mr-auto"
                 >
-                  放入左侧
+                  <Trash2 className="mr-1 h-4 w-4" />
+                  删除
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => onPlaceInOutfit(item, 1)}
-                >
-                  放入右侧
-                </Button>
-              </DialogFooter>
-            ) : null}
+              )}
+              {onPlaceInOutfit ? (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => onPlaceInOutfit(item, 0)}
+                  >
+                    放入左侧
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => onPlaceInOutfit(item, 1)}
+                  >
+                    放入右侧
+                  </Button>
+                </>
+              ) : null}
+            </DialogFooter>
           </>
         ) : null}
       </DialogContent>

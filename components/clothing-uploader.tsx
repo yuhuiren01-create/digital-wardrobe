@@ -152,21 +152,22 @@ export function ClothingUploader({ onAdd, onSuccess }: ClothingUploaderProps) {
       )}
 
       {status.kind === "done" && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           <div className="grid grid-cols-2 gap-3">
             <PreviewBlock label="原图">
-              <PreviewImage src={status.originalUrl} alt="原图" />
+              <PreviewImage src={status.originalUrl} alt="原图" compact />
             </PreviewBlock>
             <PreviewBlock label="抠图后">
               <PreviewImage
                 src={status.resultUrl}
                 alt="抠图结果"
                 checkerboard
+                compact
               />
             </PreviewBlock>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="category">分类 *</Label>
               <select
@@ -228,19 +229,26 @@ export function ClothingUploader({ onAdd, onSuccess }: ClothingUploaderProps) {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <Button
-              onClick={handleAdd}
-              disabled={!canAdd}
-              className="flex-1"
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              添加到衣橱
-            </Button>
-            <Button variant="outline" onClick={reset}>
-              <X className="h-4 w-4" />
-              重新选择
-            </Button>
+          <div className="flex flex-col gap-2">
+            {!canAdd && (
+              <p className="text-center text-xs text-amber-600">
+                请先填写上方带 * 的必填项
+              </p>
+            )}
+            <div className="flex gap-2">
+              <Button
+                onClick={handleAdd}
+                disabled={!canAdd}
+                className="flex-1"
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                添加到衣橱
+              </Button>
+              <Button variant="outline" onClick={reset}>
+                <X className="h-4 w-4" />
+                重新选择
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -293,16 +301,19 @@ function PreviewImage({
   alt,
   checkerboard = false,
   muted = false,
+  compact = false,
 }: {
   src: string;
   alt: string;
   checkerboard?: boolean;
   muted?: boolean;
+  compact?: boolean;
 }) {
   return (
     <div
       className={cn(
-        "relative aspect-square w-full overflow-hidden rounded-md ring-1 ring-border",
+        "relative w-full overflow-hidden rounded-md ring-1 ring-border",
+        compact ? "aspect-[4/3]" : "aspect-square",
         muted && "opacity-60",
       )}
       style={checkerboard ? checkerboardStyle : undefined}
