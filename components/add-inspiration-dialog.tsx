@@ -23,6 +23,7 @@ type AddInspirationDialogProps = {
     title: string;
     source: string;
     tag: string;
+    url?: string;
   }) => void;
 };
 
@@ -34,7 +35,8 @@ export function AddInspirationDialog({
   const [imageUrl, setImageUrl] = useState("");
   const [title, setTitle] = useState("");
   const [source, setSource] = useState("");
-  const [tag, setTag] = useState("街拍");
+  const [tag, setTag] = useState("小红书");
+  const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   function handleSubmit(e: React.FormEvent) {
@@ -49,8 +51,17 @@ export function AddInspirationDialog({
     try {
       new URL(imageUrl);
     } catch {
-      setError("请输入有效的 URL");
+      setError("请输入有效的图片 URL");
       return;
+    }
+
+    if (url.trim()) {
+      try {
+        new URL(url);
+      } catch {
+        setError("请输入有效的分享链接");
+        return;
+      }
     }
 
     onAdd({
@@ -58,12 +69,14 @@ export function AddInspirationDialog({
       title: title.trim() || "未命名灵感",
       source: source.trim() || "未知来源",
       tag,
+      url: url.trim() || undefined,
     });
 
     setImageUrl("");
     setTitle("");
     setSource("");
-    setTag("街拍");
+    setTag("小红书");
+    setUrl("");
     onOpenChange(false);
   }
 
@@ -73,7 +86,7 @@ export function AddInspirationDialog({
         <DialogHeader>
           <DialogTitle>添加穿搭灵感</DialogTitle>
           <DialogDescription>
-            粘贴你在小红书、Instagram、Pinterest 等平台看到的穿搭图链接。
+            粘贴小红书、Instagram、Pinterest 等平台的穿搭图链接和分享链接。
           </DialogDescription>
         </DialogHeader>
 
@@ -86,6 +99,22 @@ export function AddInspirationDialog({
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
             />
+            <p className="text-xs text-muted-foreground">
+              右键点击图片选择「复制图片地址」粘贴到这里
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="url">分享链接（可选）</Label>
+            <Input
+              id="url"
+              placeholder="https://www.xiaohongshu.com/explore/..."
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              粘贴小红书、Instagram 等帖子的分享链接，点击卡片可直接跳转
+            </p>
           </div>
 
           <div className="flex flex-col gap-2">

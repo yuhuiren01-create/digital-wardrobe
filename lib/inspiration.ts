@@ -1,45 +1,79 @@
+import { supabase } from "./supabase";
+
 export type InspirationItem = {
   id: string;
   imageUrl: string;
   title: string;
   source: string;
   tag: string;
+  url?: string;
   createdAt: string;
 };
 
-const STORAGE_KEY = "digital-wardrobe-inspirations";
+export async function getInspirations(wardrobeId: string): Promise<InspirationItem[]> {
+  const { data, error } = await supabase
+    .from("inspiration_items")
+    .select("*")
+    .eq("wardrobe_id", wardrobeId)
+    .order("created_at", { ascending: false });
 
-export function getInspirations(): InspirationItem[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as InspirationItem[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
+  if (error) {
+    console.error("Error fetching inspirations:", error);
     return [];
+  }
+
+  return (data || []).map((item) => ({
+    id: item.id,
+    imageUrl: item.image_url,
+    title: item.title,
+    source: item.source,
+    tag: item.tag,
+    url: item.url,
+    createdAt: item.created_at,
+  }));
+}
+
+export async function addInspiration(
+  wardrobeId: string,
+  item: Omit<InspirationItem, "id" | "createdAt">,
+): Promise<InspirationItem> {
+  const { data, error } = await supabase
+    .from("inspiration_items")
+    .insert({
+      wardrobe_id: wardrobeId,
+      image_url: item.imageUrl,
+      title: item.title,
+      source: item.source,
+      tag: item.tag,
+      url: item.url,
+    })
+    .select()
+    .single();
+
+  if (error || !data) {
+    throw new Error(`添加失败: ${error?.message || "未知错误"}`);
+  }
+
+  return {
+    id: data.id,
+    imageUrl: data.image_url,
+    title: data.title,
+    source: data.source,
+    tag: data.tag,
+    url: data.url,
+    createdAt: data.created_at,
+  };
+}
+
+export async function removeInspiration(id: string): Promise<void> {
+  const { error } = await supabase
+    .from("inspiration_items")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(`删除失败: ${error.message}`);
   }
 }
 
-export function saveInspirations(items: InspirationItem[]): void {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
-
-export function addInspiration(item: Omit<InspirationItem, "id" | "createdAt">): InspirationItem {
-  const newItem: InspirationItem = {
-    ...item,
-    id: `insp-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    createdAt: new Date().toISOString(),
-  };
-  const existing = getInspirations();
-  saveInspirations([newItem, ...existing]);
-  return newItem;
-}
-
-export function removeInspiration(id: string): void {
-  const existing = getInspirations();
-  saveInspirations(existing.filter((item) => item.id !== id));
-}
-
-export const INSPIRATION_TAGS = ["街拍", "秀场", "杂志", "博主", "电影", "其他"] as const;
+export const INSPIRATION_TAGS = ["街拍", "秀场", "杂志", "博主", "电影", "小红书", "其他"] as const;
